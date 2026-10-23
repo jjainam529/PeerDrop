@@ -1,0 +1,223 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Primary SEO Tags -->
+<title>Peer Dropp - Fast &amp; Secure File Sharing</title>
+<meta name="description" content="Peer Dropp lets you share files instantly using a simple 4-digit code. Fast, secure, and direct peer-to-peer file transfer.">
+<meta name="keywords" content="Peer Dropp, file sharing, instant file transfer, peer to peer">
+<meta name="robots" content="index, follow">
+
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #eef6fc;
+      color: #1e2a44;
+      margin: 0;
+      padding: 25px 16px 40px;
+      min-height: 100vh;
+    }
+
+    .logo {
+      width: 180px;
+      max-width: 65%;
+      height: auto;
+      display: block;
+      margin: 0 auto 20px;
+    }
+
+    hr {
+      border: 0;
+      border-top: 1px solid #cfe1f5;
+      width: 100%;
+      max-width: 450px;
+      margin: 25px auto;
+    }
+
+    h1 {
+      font-size: 24px;
+      line-height: 1.4;
+      margin: 25px auto;
+      max-width: 550px;
+    }
+
+    pre {
+      text-align: left;
+      background: #fff;
+      border: 1px solid #cfe1f5;
+      border-radius: 12px;
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: 25px auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: Arial, sans-serif;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+
+    .choice-row {
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+      gap: 24px;
+      width: 100%;
+      max-width: 500px;
+      margin: 30px auto 0;
+    }
+
+    .choice-btn {
+      background: #fff;
+      border: 1px solid #cfe1f5;
+      border-radius: 12px;
+      padding: 22px 15px;
+      flex: 1;
+      min-width: 0;
+      max-width: 190px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .choice-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(30, 42, 68, 0.1);
+    }
+
+    .choice-btn a {
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .choice-btn img {
+      width: 90px;
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    .choice-btn span {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    /* Mobile screens */
+    @media (max-width: 480px) {
+      body {
+        padding: 18px 14px 30px;
+      }
+
+      .logo {
+        width: 155px;
+      }
+
+      hr {
+        margin: 20px auto;
+      }
+
+      h1 {
+        font-size: 21px;
+        margin: 22px auto;
+      }
+
+      pre {
+        font-size: 14px;
+        line-height: 1.7;
+        padding: 15px;
+        margin: 22px auto;
+      }
+
+      .choice-row {
+        gap: 14px;
+        margin-top: 24px;
+      }
+
+      .choice-btn {
+        padding: 18px 10px;
+        border-radius: 10px;
+      }
+
+      .choice-btn img {
+        width: 70px;
+      }
+
+      .choice-btn span {
+        font-size: 16px;
+      }
+    }
+
+    /* Extra-small phones */
+    @media (max-width: 350px) {
+      body {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      h1 {
+        font-size: 19px;
+      }
+
+      pre {
+        font-size: 13px;
+        padding: 12px;
+      }
+
+      .choice-row {
+        gap: 10px;
+      }
+
+      .choice-btn img {
+        width: 58px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <img src="logo1.png" class="logo" alt="PeerDrop logo">
+
+  <hr>
+
+  <h1>PeerDrop is a secure, simple file sharing system</h1>
+
+  <pre><b>Instructions to follow</b>
+
+1. Select Send.
+2. Select the file to share.
+3. A 4-digit code will be generated.
+4. Enter that code on the receiver's device.
+5. Download the file.</pre>
+
+  <div class="choice-row">
+
+    <button class="choice-btn" id="btn-send" type="button">
+      <a href="send.html">
+        <img src="send.png" alt="Send files">
+        <span>Send</span>
+      </a>
+    </button>
+
+    <button class="choice-btn" id="btn-receive" type="button">
+      <a href="recieve.html">
+        <img src="recieve.png" alt="Receive files">
+        <span>Receive</span>
+      </a>
+    </button>
+
+  </div>
+
+</body>
+</html>

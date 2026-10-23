@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Primary SEO Tags -->
+<title>Receive Files - Peer Dropp</title>
+<meta name="description" content="Receive a file on Peer Dropp: enter the 4-digit code from the sender to download it directly, peer to peer.">
+<meta name="keywords" content="Peer Dropp, file sharing, instant file transfer, peer to peer">
+<meta name="robots" content="index, follow">
+
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <img src="logo1.png" height="100" alt="PeerDrop logo">
+    <hr>
+
+    <h3>Enter 4 digit code to receive files</h3>
+
+    <div class="dropzone" id="code-box">
+        <input type="text" id="code-input"
+            inputmode="numeric" maxlength="4" placeholder="0000">
+    </div>
+
+    <button id="fetch-btn">Connect</button>
+    <div class="msg" id="fetch-msg"></div>
+    <progress id="progress-bar" value="0" max="100"
+        style="display:none;"></progress>
+    <div id="result-box"></div>
+
+    <script>
+        const codeInput = document.getElementById('code-input');
+        const fetchBtn = document.getElementById('fetch-btn');
+        const fetchMsg = document.getElementById('fetch-msg');
+        const resultBox = document.getElementById('result-box');
+        const progressBar = document.getElementById('progress-bar');
+
+        codeInput.addEventListener('input', () => {
+            codeInput.value = codeInput.value
+                .replace(/[^0-9]/g, '').slice(0, 4);
+        });
+
+        codeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') fetchBtn.click();
+        });
+
+        let fileHeader = null;
+        let receivedChunks = [];
+        let receivedBytes = 0;
+        let finished = false;
+
+// ---------- Network setup ----------
+        // STUN helps two devices find each other. TURN is a RELAY that carries the file
+        // when a direct link is blocked (mobile data, college/office Wi-Fi). Without a
+        // working TURN server, transfers between such networks fail.
+        //
+        // >>> PASTE YOUR OWN TURN SERVERS HERE <<<
+        // Create a free TURN app at https://www.metered.ca (Dashboard -> TURN Server)
+        // and copy the iceServers list it shows you, e.g.
+        // const MY_ICE_SERVERS = [
+        //   { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
+        //   { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" },
+        //   { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "xxxx", credential: "yyyy" }
+        // ];
+        const MY_ICE_SERVERS = [];
+
+        const STUN_SERVERS = [
+            { urls: "stun:stun.l.google.com:19302" },
+            { urls: "stun:stun1.l.google.com:19302" },
+            { urls: "stun:global.stun.twilio.com:3478" }
+        ];
+
+        // Free public fallback. Shared by many people and often unreliable or disabled.
+        const FALLBACK_TURN = [{
+            urls: [
+                "turn:openrelay.metered.ca:80",
+                "turn:openrelay.metered.ca:443",
+                "turns:openrelay.metered.ca:443?transport=tcp"
+            ],
+            username: "openrelayproject",
+            credential: "openrelayproject"
+        }];
+
+        const ICE_SERVERS = STUN_SERVERS.concat(
+            MY_ICE_SERVERS.length ? MY_ICE_SERVERS : FALLBACK_TURN
+        );
+        const PEER_OPTIONS = { config: { iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 } };
+        const CONNECT_TIMEOUT_MS = 20000;
+
+        // Does at least one TURN relay actually answer? (true / false)
+        let relayWorks = null;
+        function checkRelay() {
+            return new Promise(resolve => {
+                const turn = ICE_SERVERS.filter(s => JSON.stringify(s.urls).includes("turn"));
+                if (!turn.length || typeof RTCPeerConnection === "undefined") return resolve(false);
+
+                const pc = new RTCPeerConnection({ iceServers: turn, iceTransportPolicy: "relay" });
+                let done = false;
+                const finish = ok => {
+                    if (done) return;
+                    done = true;
+                    try { pc.close(); } catch (e) {}
+                    resolve(ok);
+                };
+
+                pc.onicecandidate = e => {
+                    if (e.candidate && e.candidate.candidate.includes(" typ relay")) finish(true);
+                    if (!e.candidate) finish(false);
+                };
+                pc.createDataChannel("probe");
+                pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => finish(false));
+                setTimeout(() => finish(false), 8000);
+            });
+        }
+        
+        checkRelay().then(ok => {
+            relayWorks = ok;
+            if (!ok) console.warn('No TURN relay is reachable. Add your own servers to MY_ICE_SERVERS.');
+        });
+
+        let activePeer = null;
+
+        fetchBtn.addEventListener('click', () => {
+            const code = codeInput.value;
+
+            fetchMsg.className = 'msg';
+            resultBox.innerHTML = '';
+            progressBar.style.display = 'none';
+            progressBar.value = 0;
+            fileHeader = null;
+            receivedChunks = [];
+            receivedBytes = 0;
+            finished = false;
+
+            if (code.length !== 4) {
+                fetchMsg.className = 'msg err';
+                fetchMsg.textContent = 'Enter all 4 digits.';
+                return;
+            }
+
+            fetchBtn.disabled = true;
+            fetchMsg.textContent = 'Connecting...';
+
+            if (activePeer) { try { activePeer.destroy(); } catch (e) {} }
+            const peer = new Peer(undefined, PEER_OPTIONS);
+            activePeer = peer;
+
+            peer.on('open', () => {
+                const conn = peer.connect(code, { reliable: true });
+
+                const connectTimer = setTimeout(() => {
+                    if (!conn.open) {
+                        fetchMsg.className = 'msg err';
+                        fetchMsg.textContent = relayWorks === false
+                            ? 'Could not connect. The relay server is not responding, and your network blocks direct connections. Try the same Wi-Fi as the sender.'
+                            : 'Could not connect to the sender. Your network may block direct connections. Try another network and try again.';
+                        fetchBtn.disabled = false;
+                        try { conn.close(); peer.destroy(); } catch (e) {}
+                    }
+                }, CONNECT_TIMEOUT_MS);
+
+                conn.on('open', () => {
+                    clearTimeout(connectTimer);
+                    fetchMsg.textContent = 'Connected. Waiting for file...';
+                    progressBar.style.display = 'block';
+                });
+
+                conn.on('data', (data) => {
+                    if (data && data.kind === 'error') {
+                        finished = true;
+                        fetchMsg.className = 'msg err';
+                        fetchMsg.textContent = data.message || 'The sender refused the connection.';
+                        progressBar.style.display = 'none';
+                        fetchBtn.disabled = false;
+                    } else if (data && data.kind === 'header') {
+                        fileHeader = data;
+                    } else if (data && data.kind === 'done') {
+                        finished = true;
+                        // Messages can arrive slightly out of order, so 'done' also
+                        // carries the file info, and we wait until every byte is here.
+                        if (!fileHeader) {
+                            fileHeader = { name: data.name, type: data.type, size: data.size };
+                        }
+                        waitForAllBytes();
+                    } else {
+                        receivedChunks.push(data);
+                        receivedBytes += data.byteLength;
+
+                        if (fileHeader && fileHeader.size > 0) {
+                            progressBar.value = Math.min(
+                                100,
+                                Math.round((receivedBytes / fileHeader.size) * 100)
+                            );
+                        }
+                    }
+                });
+
+                conn.on('close', () => {
+                    if (!finished) {
+                        fetchMsg.className = 'msg err';
+                        fetchMsg.textContent = 'The sender disconnected before the file finished. Try again.';
+                        fetchBtn.disabled = false;
+                    }
+                });
+
+                conn.on('error', () => {
+                    fetchMsg.className = 'msg err';
+                    fetchMsg.textContent = 'Connection lost. Try again.';
+                    fetchBtn.disabled = false;
+                });
+            });
+
+            peer.on('error', (err) => {
+                fetchBtn.disabled = false;
+                fetchMsg.className = 'msg err';
+
+                if (err.type === 'peer-unavailable') {
+                    fetchMsg.textContent =
+                        'No sender found with that code. Check the digits. Codes also expire 4 minutes after they are created.';
+                } else {
+                    fetchMsg.textContent = 'Connection error: ' + err.type;
+                }
+            });
+        });
+
+        function waitForAllBytes(tries = 0) {
+            if (!fileHeader || receivedBytes >= fileHeader.size) {
+                finishDownload();
+            } else if (tries > 100) {
+                fetchMsg.className = 'msg err';
+                fetchMsg.textContent = 'The file arrived incomplete. Please try again.';
+                fetchBtn.disabled = false;
+            } else {
+                setTimeout(() => waitForAllBytes(tries + 1), 100);
+            }
+        }
+
+        function finishDownload() {
+            if (!fileHeader) {
+                fetchMsg.className = 'msg err';
+                fetchMsg.textContent = 'File information was not received.';
+                fetchBtn.disabled = false;
+                return;
+            }
+
+            const blob = new Blob(receivedChunks, {
+                type: fileHeader.type || 'application/octet-stream'
+            });
+
+            const url = URL.createObjectURL(blob);
+
+            fetchMsg.className = 'msg ok';
+            fetchMsg.textContent = 'File received!';
+            fetchBtn.disabled = false;
+
+            const p = document.createElement('p');
+            const name = document.createElement('b');
+            name.textContent = fileHeader.name;
+            p.appendChild(name);
+            p.appendChild(document.createElement('br'));
+            p.appendChild(document.createTextNode(
+                Math.round(fileHeader.size / 1024) + ' KB'
+            ));
+
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileHeader.name;
+
+            const button = document.createElement('button');
+            button.textContent = 'Download file';
+            link.appendChild(button);
+
+            resultBox.replaceChildren(p, link);
+        }
+    </script>
+</body>
+</html>

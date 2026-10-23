@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: peerdrop-converter
+    runtime: docker
+    dockerfilePath: ./converter/Dockerfile
+    dockerContext: ./converter
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: MAX_JOBS
+        value: "1"

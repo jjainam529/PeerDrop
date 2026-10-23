@@ -1,0 +1,1501 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Primary SEO Tags -->
+<title>Send Files - Peer Dropp</title>
+<meta name="description" content="Send files with Peer Dropp: pick a file, get a 4-digit code and share it with up to 10 people. Fast, direct peer-to-peer transfer.">
+<meta name="keywords" content="Peer Dropp, file sharing, instant file transfer, peer to peer">
+<meta name="robots" content="index, follow">
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<script src="https://unpkg.com/mammoth@1.8.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    text-align: center;
+    background: linear-gradient(180deg, #eaf6fc, #ffffff);
+    color: #16213e;
+    min-height: 100vh;
+    margin: 0;
+    padding: 30px 16px 50px;
+}
+
+.container {
+    max-width: 560px;
+    width: 100%;
+    margin: auto;
+}
+
+.logo {
+    height: 90px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, #7ec8e3, #1565c0, #7ec8e3);
+    margin: 22px 0 28px;
+}
+
+h3 {
+    font-size: 25px;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    padding: 28px;
+    border: 1px solid #d6eef9;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(21, 101, 192, .10);
+}
+
+label.field-label {
+    display: block;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    margin: 14px 0 8px;
+}
+
+select {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    border: 1px solid #7ec8e3;
+    border-radius: 10px;
+    background: #f4faff;
+    color: #16213e;
+    font: inherit;
+    cursor: pointer;
+    margin-bottom: 22px;
+}
+
+select:focus {
+    outline: 2px solid rgba(21, 101, 192, .2);
+    border-color: #1565c0;
+}
+
+/* Custom upload box */
+.upload-box {
+    padding: 28px 18px;
+    margin-bottom: 18px;
+    border: 2px dashed #7ec8e3;
+    border-radius: 16px;
+    background: #f4faff;
+    transition: background .2s, border-color .2s;
+}
+
+.upload-box:hover,
+.upload-box.drag-over {
+    background: #eaf6fc;
+    border-color: #1565c0;
+}
+
+.upload-icon {
+    font-size: 42px;
+    color: #1565c0;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+#upload-title {
+    font-size: 16px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+    margin: 12px 0 6px;
+}
+
+.upload-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0 0 14px;
+}
+
+.upload-box input[type="file"] {
+    display: none;
+}
+
+.browse-btn {
+    display: inline-block;
+    padding: 11px 22px;
+    border-radius: 9px;
+    background: #1565c0;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .2s;
+}
+
+.browse-btn:hover {
+    background: #0d4fa3;
+}
+
+#file-info,
+.msg,
+#conversion-info {
+    margin-top: 14px;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+
+#file-info,
+#conversion-info {
+    color: #0e7490;
+}
+
+.err {
+    color: #c0392b;
+}
+
+.ok {
+    color: #1e7a4c;
+}
+
+button.primary {
+    width: 100%;
+    padding: 14px 20px;
+    margin-top: 16px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #1565c0, #2f8fd4);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+button.primary:hover:not(:disabled) {
+    opacity: .9;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+#code-box {
+    display: none;
+    margin-top: 24px;
+    padding: 22px;
+    background: #eaf6fc;
+    border: 1px solid #b7e1f2;
+    border-radius: 14px;
+}
+
+.code {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: 10px;
+    color: #1565c0;
+    margin: 18px 0;
+    overflow-wrap: anywhere;
+}
+
+#status-text {
+    overflow-wrap: anywhere;
+}
+
+#timer-text {
+    font-weight: 600;
+    font-size: 14px;
+    margin: 4px 0 12px;
+}
+
+.code.expired {
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+#receiver-list {
+    text-align: left;
+    margin-top: 14px;
+}
+
+.receiver-row {
+    background: #fff;
+    border: 1px solid #d6eef9;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.receiver-row progress {
+    display: block;
+    height: 8px;
+    margin-top: 6px;
+}
+
+button.link {
+    background: none;
+    border: none;
+    color: #c0392b;
+    font: inherit;
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    margin-top: 12px;
+}
+
+progress {
+    width: 100%;
+    height: 10px;
+    margin-top: 16px;
+    accent-color: #1565c0;
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 22px 14px;
+    }
+
+    .card {
+        padding: 20px 16px;
+    }
+
+    h3 {
+        font-size: 22px;
+    }
+
+    .code {
+        font-size: 29px;
+        letter-spacing: 7px;
+    }
+}
+
+/* Extra phone-friendly sizing */
+html {
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+.container,
+.card,
+.upload-box,
+#code-box {
+    min-width: 0;
+}
+
+button,
+select,
+.browse-btn {
+    touch-action: manipulation;
+}
+
+#upload-title,
+#file-info,
+#conversion-info,
+.msg,
+#status-text {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+@media (max-width: 360px) {
+    body {
+        padding: 16px 10px 28px;
+    }
+
+    .logo {
+        height: 72px;
+    }
+
+    h3 {
+        font-size: 20px;
+        line-height: 1.35;
+    }
+
+    .card {
+        padding: 16px 12px;
+        border-radius: 14px;
+    }
+
+    .upload-box {
+        padding: 22px 10px;
+    }
+
+    .upload-icon {
+        font-size: 36px;
+    }
+
+    .browse-btn {
+        max-width: 100%;
+        padding: 11px 16px;
+    }
+
+    .code {
+        font-size: 26px;
+        letter-spacing: 5px;
+    }
+
+    button.primary {
+        padding: 13px 12px;
+        font-size: 15px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+<div class="container">
+
+    <img src="logo1.png" class="logo" alt="PeerDrop logo">
+    <hr>
+
+    <h3>Share files your way</h3>
+
+    <div class="card">
+
+        <!-- Format dropdown ABOVE upload box -->
+        <label class="field-label" for="output-format">
+            Convert file to
+        </label>
+
+        <select id="output-format">
+            <option value="original">Keep original format</option>
+            <option value="pdf">PDF (.pdf)</option>
+            <option value="docx">Word (.docx)</option>
+            <option value="pptx">PowerPoint (.pptx)</option>
+            <option value="txt">Plain text (.txt)</option>
+            <option value="png">PNG image (.png)</option>
+            <option value="jpg">JPG image (.jpg)</option>
+        </select>
+
+        <!-- Custom upload box -->
+        <label class="field-label" for="file-input">
+            Choose your file
+        </label>
+
+        <div class="upload-box" id="upload-box">
+            <div class="upload-icon">↑</div>
+            <p id="upload-title">Drop your file here</p>
+            <p class="upload-subtitle">or click below to browse</p>
+
+            <label for="file-input" class="browse-btn">
+                Browse files
+            </label>
+
+            <input type="file" id="file-input">
+        </div>
+
+        <div id="file-info">No file selected.</div>
+        <div id="conversion-info"></div>
+
+        <button class="primary" id="send-btn" disabled>
+            Convert &amp; Generate Code
+        </button>
+
+        <div class="msg" id="send-msg"></div>
+
+        <div id="code-box">
+            <p>Give this code to your receivers (up to 10, valid for 4 minutes):</p>
+            <div class="code" id="code-text"></div>
+            <div id="timer-text"></div>
+            <div id="relay-note" style="display:none;color:#b45309;font-size:13px;margin:-6px 0 10px;">Note: the relay server is not responding, so transfers may fail between some networks (for example phone data to Wi-Fi).</div>
+            <p id="status-text">Waiting for receivers to connect...</p>
+            <div id="receiver-list"></div>
+            <button class="link" id="stop-btn" type="button">Stop sharing now</button>
+        </div>
+
+    </div>
+</div>
+
+<script>
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+// URL of the converter service (see /converter). Leave "" to use only the
+// in-browser converters. Example: "https://peerdrop-converter.onrender.com"
+const CONVERTER_URL = "";
+const SERVER_NOTE = "Converted on our server with LibreOffice / pdf2docx for accurate layout. The file is deleted right after conversion.";
+function usesServer(kind, format) {
+    return !!CONVERTER_URL &&
+        ((["docx", "office"].includes(kind) && format === "pdf") || (kind === "pdf" && format === "docx"));
+}
+
+let serverFallback = false;   // true if the last conversion had to use the basic in-browser converter
+
+// Free hosts (e.g. Render) put the converter to sleep when idle; wake it as soon as the page opens.
+if (CONVERTER_URL) {
+    fetch(CONVERTER_URL + "/health").catch(() => {});
+}
+
+async function convertOnServer(file, format) {
+    const fd = new FormData();
+    fd.append("file", file);
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 150000);
+    try {
+        const res = await fetch(CONVERTER_URL + "/convert?to=" + format,
+            { method: "POST", body: fd, signal: ctrl.signal });
+        if (!res.ok) throw new Error((await res.text()) || ("HTTP " + res.status));
+        const blob = await res.blob();
+        if (!blob.size) throw new Error("Empty result");
+        const mime = format === "pdf" ? "application/pdf"
+            : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        return makeFile(blob, outputName(file.name, format), mime);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+const fileInput = document.getElementById("file-input");
+const outputFormat = document.getElementById("output-format");
+const uploadBox = document.getElementById("upload-box");
+const uploadTitle = document.getElementById("upload-title");
+const fileInfo = document.getElementById("file-info");
+const conversionInfo = document.getElementById("conversion-info");
+const sendBtn = document.getElementById("send-btn");
+const sendMsg = document.getElementById("send-msg");
+const codeBox = document.getElementById("code-box");
+const codeText = document.getElementById("code-text");
+const statusText = document.getElementById("status-text");
+const timerText = document.getElementById("timer-text");
+const relayNote = document.getElementById("relay-note");
+const receiverList = document.getElementById("receiver-list");
+const stopBtn = document.getElementById("stop-btn");
+
+// ---------- Network setup ----------
+// STUN helps two devices find each other. TURN is a RELAY that carries the file
+// when a direct link is blocked (mobile data, college/office Wi-Fi). Without a
+// working TURN server, transfers between such networks fail.
+//
+// >>> PASTE YOUR OWN TURN SERVERS HERE <<<
+// Create a free TURN app at https://www.metered.ca (Dashboard -> TURN Server)
+// and copy the iceServers list it shows you, e.g.
+// const MY_ICE_SERVERS = [
+//   { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
+//   { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" },
+//   { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "xxxx", credential: "yyyy" }
+// ];
+const MY_ICE_SERVERS = [];
+
+const STUN_SERVERS = [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:global.stun.twilio.com:3478" }
+];
+
+// Free public fallback. Shared by many people and often unreliable or disabled.
+const FALLBACK_TURN = [{
+    urls: [
+        "turn:openrelay.metered.ca:80",
+        "turn:openrelay.metered.ca:443",
+        "turns:openrelay.metered.ca:443?transport=tcp"
+    ],
+    username: "openrelayproject",
+    credential: "openrelayproject"
+}];
+
+const ICE_SERVERS = STUN_SERVERS.concat(
+    MY_ICE_SERVERS.length ? MY_ICE_SERVERS : FALLBACK_TURN
+);
+const PEER_OPTIONS = { config: { iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 } };
+const CONNECT_TIMEOUT_MS = 20000;
+
+// Does at least one TURN relay actually answer? (true / false)
+let relayWorks = null;
+function checkRelay() {
+    return new Promise(resolve => {
+        const turn = ICE_SERVERS.filter(s => JSON.stringify(s.urls).includes("turn"));
+        if (!turn.length || typeof RTCPeerConnection === "undefined") return resolve(false);
+
+        const pc = new RTCPeerConnection({ iceServers: turn, iceTransportPolicy: "relay" });
+        let done = false;
+        const finish = ok => {
+            if (done) return;
+            done = true;
+            try { pc.close(); } catch (e) {}
+            resolve(ok);
+        };
+
+        pc.onicecandidate = e => {
+            if (e.candidate && e.candidate.candidate.includes(" typ relay")) finish(true);
+            if (!e.candidate) finish(false);
+        };
+        pc.createDataChannel("probe");
+        pc.createOffer().then(o => pc.setLocalDescription(o)).catch(() => finish(false));
+        setTimeout(() => finish(false), 8000);
+    });
+}
+
+const CODE_LIFETIME_MS = 4 * 60 * 1000;   // code works for 4 minutes
+const MAX_RECEIVERS = 10;                  // receivers allowed per code
+
+const CHUNK_SIZE = 64 * 1024;
+
+let pendingFile = null;   // the file the user picked (never overwritten)
+let preparedFile = null;  // the converted file that actually gets sent
+let pdfPageCount = null;  // page count if the picked file is a PDF
+let checkToken = 0;
+let peer = null;
+let busy = false;
+let expiryTimer = null;
+let expiresAt = 0;
+let expired = false;
+let activeTransfers = 0;
+let receiverCount = 0;
+
+function setMessage(message, type = "") {
+    sendMsg.className = "msg " + type;
+    sendMsg.textContent = message;
+}
+
+function extension(name) {
+    const i = name.lastIndexOf(".");
+    return i < 0 ? "" : name.slice(i + 1).toLowerCase();
+}
+
+function outputName(name, ext) {
+    const i = name.lastIndexOf(".");
+    const base = i > 0 ? name.slice(0, i) : name;
+    return base + "." + ext;
+}
+
+function makeFile(blob, name, type) {
+    return new File([blob], name, {
+        type: type,
+        lastModified: Date.now()
+    });
+}
+
+function resetShare() {
+    clearInterval(expiryTimer);
+    expired = false;
+    activeTransfers = 0;
+    receiverCount = 0;
+    preparedFile = null;
+    receiverList.textContent = "";
+    codeText.classList.remove("expired");
+    if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+    codeBox.style.display = "none";
+}
+
+async function selectFile(file) {
+    if (!file) return;
+
+    pendingFile = file;
+    pdfPageCount = null;
+    fileInput.value = "";
+    resetShare();
+
+    uploadTitle.textContent = file.name;
+    fileInfo.textContent =
+        file.name + " (" + Math.round(file.size / 1024) + " KB)";
+    setMessage("");
+
+    if (kindOf(file) === "pdf") {
+        try {
+            const pdf = await pdfjsLib.getDocument({
+                data: await file.arrayBuffer()
+            }).promise;
+            if (pendingFile === file) pdfPageCount = pdf.numPages;
+        } catch (e) { /* unreadable PDF is reported on convert */ }
+    }
+
+    refreshStatus();
+}
+
+fileInput.addEventListener("change", () => {
+    if (fileInput.files.length) {
+        selectFile(fileInput.files[0]);
+    }
+});
+
+// Drag-and-drop support
+uploadBox.addEventListener("dragover", event => {
+    event.preventDefault();
+    uploadBox.classList.add("drag-over");
+});
+
+uploadBox.addEventListener("dragleave", () => {
+    uploadBox.classList.remove("drag-over");
+});
+
+uploadBox.addEventListener("drop", event => {
+    event.preventDefault();
+    uploadBox.classList.remove("drag-over");
+
+    const file = event.dataTransfer.files[0];
+    if (file) selectFile(file);
+});
+
+outputFormat.addEventListener("change", () => {
+    setMessage("");
+    resetShare();
+    refreshStatus();
+});
+
+// ---------- What can be converted to what ----------
+const IMAGE_EXT = ["png", "jpg", "jpeg", "webp", "gif", "bmp", "svg"];
+const TEXT_EXT = ["txt", "csv", "md", "json", "xml", "html", "htm"];
+// Office files that only the converter server can handle (Word 97, OpenDocument, RTF, PowerPoint, Excel)
+const OFFICE_EXT = ["doc", "odt", "rtf", "ppt", "pptx", "odp", "xls", "xlsx", "ods"];
+const FORMAT_LABEL = {
+    pdf: "PDF", docx: "Word", pptx: "PowerPoint",
+    txt: "plain text", png: "PNG", jpg: "JPG"
+};
+
+function kindOf(file) {
+    const ext = extension(file.name);
+    if (ext === "pdf") return "pdf";
+    if (ext === "docx") return "docx";
+    if (OFFICE_EXT.includes(ext)) return "office";
+    if (IMAGE_EXT.includes(ext) || file.type.startsWith("image/")) return "image";
+    if (TEXT_EXT.includes(ext)) return "text";
+    return "other";
+}
+
+function sameFormat(file, format) {
+    const ext = extension(file.name);
+    return ext === format || (format === "jpg" && ext === "jpeg");
+}
+
+// Returns { ok, error?, note? }. Everything that can be known up front is
+// checked here, so the user sees "not possible" before anything is converted.
+function checkConversion(file, format) {
+    if (!file) return { ok: false };
+    if (format === "original") {
+        return { ok: true, note: "The file will be sent without conversion." };
+    }
+
+    const ext = extension(file.name) || "this";
+    const kind = kindOf(file);
+    const target = FORMAT_LABEL[format];
+
+    if (sameFormat(file, format)) {
+        return { ok: false, error:
+            "This file is already a ." + ext + " file. Choose \"Keep original format\" to send it as is." };
+    }
+
+    if (kind === "other") {
+        return { ok: false, error:
+            "Not possible: ." + ext + " files can't be converted to " + target +
+            ". Supported inputs are PDF, Word (.docx), images, and text files (TXT, CSV, MD, JSON, HTML). " +
+            "You can still send it with \"Keep original format\"." };
+    }
+
+    if (kind === "office") {
+        if (format === "pdf") {
+            return CONVERTER_URL
+                ? { ok: true, note: SERVER_NOTE }
+                : { ok: false, error: "Not possible: ." + ext + " to PDF needs the converter server, which is not set up yet." };
+        }
+        return { ok: false, error:
+            "Not possible: ." + ext + " files can only be converted to PDF. You can still send it with \"Keep original format\"." };
+    }
+
+    if (kind === "image") {
+        if (format === "png" || format === "jpg") return { ok: true };
+        if (format === "pdf") return { ok: true, note: "The image will be placed on an A4 PDF page." };
+        return { ok: false, error:
+            "Not possible: an image can't be converted to " + target +
+            " because there is no text to extract. Try PDF, PNG or JPG instead." };
+    }
+
+    if (kind === "pdf") {
+        if (format === "png" || format === "jpg") {
+            if (pdfPageCount && pdfPageCount > 1) {
+                return { ok: false, error:
+                    "Not possible: this PDF has " + pdfPageCount + " pages, and a " + target +
+                    " image can only hold one page. Only single-page PDFs can be converted to an image." };
+            }
+            return { ok: true };
+        }
+        if (usesServer(kind, format)) return { ok: true, note: SERVER_NOTE };
+        return { ok: true, note:
+            "Only the text of the PDF is carried over. Layout, fonts and images are not kept." };
+    }
+
+    if (kind === "docx") {
+        if (format === "png" || format === "jpg") {
+            return { ok: false, error:
+                "Not possible: a Word document can't be converted to an image. Convert it to PDF instead." };
+        }
+        if (format === "pdf") return { ok: true, note: usesServer(kind, format) ? SERVER_NOTE : "" };
+        return { ok: true, note: "Only the text is carried over. Formatting and images are not kept." };
+    }
+
+    if (kind === "text") {
+        if (format === "png" || format === "jpg") {
+            return { ok: false, error:
+                "Not possible: a text file can't be converted to an image. Try PDF or Word instead." };
+        }
+        return { ok: true };
+    }
+
+    return { ok: false, error: "This conversion is not supported." };
+}
+
+function refreshStatus() {
+    const check = checkConversion(pendingFile, outputFormat.value);
+
+    conversionInfo.className = check.ok ? "" : "err";
+    conversionInfo.textContent = check.ok ? (check.note || "") : (check.error || "");
+    sendBtn.disabled = busy || !pendingFile || !check.ok;
+}
+
+async function extractText(file) {
+    const ext = extension(file.name);
+
+    if (["txt", "csv", "md", "json", "xml"].includes(ext)) {
+        return await file.text();
+    }
+
+    if (["html", "htm"].includes(ext)) {
+        const source = await file.text();
+        const doc = new DOMParser().parseFromString(source, "text/html");
+        return doc.body.innerText || doc.body.textContent || "";
+    }
+
+    if (ext === "docx") {
+        const result = await mammoth.extractRawText({
+            arrayBuffer: await file.arrayBuffer()
+        });
+        return result.value;
+    }
+
+    if (ext === "pdf") {
+        const pdf = await pdfjsLib.getDocument({
+            data: await file.arrayBuffer()
+        }).promise;
+
+        const pages = [];
+
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const content = await page.getTextContent();
+            // Rebuild real lines (by y position) and add spaces only at real gaps,
+            // so words are not split ("Ips hita") and lines are not merged.
+            const lines = []; let line = "", lastY = null, lastEnd = null;
+            for (const it of content.items) {
+                const x = it.transform[4], y = it.transform[5];
+                if (lastY !== null && Math.abs(y - lastY) > 3) { lines.push(line); line = ""; lastEnd = null; }
+                else if (line && lastEnd !== null && x - lastEnd > 1.5 && !line.endsWith(" ") && !it.str.startsWith(" ")) line += " ";
+                line += it.str; lastY = y; lastEnd = x + it.width;
+            }
+            lines.push(line);
+            pages.push(lines.join("\n"));
+        }
+
+        return pages.join("\n\n");
+    }
+
+    throw new Error(
+        "Text conversion is not supported for this file type. " +
+        "Try TXT, CSV, HTML, DOCX or a text-based PDF."
+    );
+}
+
+async function imageToBlob(file, mimeType) {
+    if (!file.type.startsWith("image/")) {
+        throw new Error("JPG/PNG conversion requires an image file.");
+    }
+
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+
+    const ctx = canvas.getContext("2d");
+
+    if (mimeType === "image/jpeg") {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => {
+            if (blob) resolve(blob);
+            else reject(new Error("Image conversion failed."));
+        }, mimeType, 0.92);
+    });
+}
+
+async function pdfToImage(file, mime) {
+    const pdf = await pdfjsLib.getDocument({
+        data: await file.arrayBuffer()
+    }).promise;
+
+    if (pdf.numPages !== 1) {
+        throw new Error(
+            "This PDF has " + pdf.numPages + " pages. Only single-page PDFs can become an image."
+        );
+    }
+
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 2.5 });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    const ctx = canvas.getContext("2d");
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport }).promise;
+
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(blob => blob ? resolve(blob)
+            : reject(new Error("Image conversion failed.")), mime, 0.95);
+    });
+}
+
+async function imageToPdf(file) {
+    const { jsPDF } = window.jspdf;
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(bitmap, 0, 0);
+    bitmap.close();
+
+    const landscape = canvas.width > canvas.height;
+    const pdf = new jsPDF({
+        orientation: landscape ? "landscape" : "portrait",
+        unit: "mm", format: "a4", compress: true
+    });
+    const pw = pdf.internal.pageSize.getWidth() - 20;
+    const ph = pdf.internal.pageSize.getHeight() - 20;
+    const ratio = Math.min(pw / canvas.width, ph / canvas.height);
+    const w = canvas.width * ratio;
+    const h = canvas.height * ratio;
+
+    pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG",
+        (pdf.internal.pageSize.getWidth() - w) / 2,
+        (pdf.internal.pageSize.getHeight() - h) / 2, w, h);
+
+    return makeFile(pdf.output("blob"), outputName(file.name, "pdf"), "application/pdf");
+}
+
+// Word stores real column widths, but mammoth drops them, so the browser
+// guesses and wide tables overflow the page. Read them straight from the .docx.
+async function readDocxTableGrids(arrayBuffer) {
+    if (typeof JSZip === "undefined") return [];
+    try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const xml = await zip.file("word/document.xml").async("string");
+        const doc = new DOMParser().parseFromString(xml, "application/xml");
+
+        return Array.from(doc.getElementsByTagName("w:tbl")).map(tbl => {
+            const grid = Array.from(tbl.children)
+                .find(c => c.nodeName === "w:tblGrid");
+            return grid
+                ? Array.from(grid.getElementsByTagName("w:gridCol"))
+                    .map(c => Number(c.getAttribute("w:w")) || 0)
+                : [];
+        });
+    } catch (e) {
+        return [];
+    }
+}
+
+function applyTableGrids(root, grids) {
+    const tables = Array.from(root.querySelectorAll("table"));
+    if (!grids.length || tables.length !== grids.length) return;
+
+    tables.forEach((table, i) => {
+        const cols = grids[i];
+        const total = cols.reduce((a, b) => a + b, 0);
+        if (!cols.length || !total) return;
+
+        const colgroup = document.createElement("colgroup");
+        cols.forEach(w => {
+            const col = document.createElement("col");
+            col.style.width = (w / total * 100).toFixed(2) + "%";
+            colgroup.appendChild(col);
+        });
+
+        table.insertBefore(colgroup, table.firstChild);
+        table.style.tableLayout = "fixed";
+        table.style.width = "100%";
+    });
+}
+
+// Resumes often line things up with runs of spaces ("Role      Company      Date").
+// HTML collapses those, so turn each run into a flexible gap that pushes the
+// pieces apart (left / middle / right), like in Word.
+function spreadSpaceGaps(root) {
+    root.querySelectorAll("p").forEach(p => {
+        const text = p.textContent.replace(/\u00a0/g, " ");
+        if (!/ {5,}/.test(text.trim())) return;
+
+        const pieces = [];
+        const re = / {5,}/g;
+        let last = 0, m;
+        const trimmed = text;
+
+        while ((m = re.exec(trimmed))) {
+            pieces.push([last, m.index]);
+            last = m.index + m[0].length;
+        }
+        pieces.push([last, trimmed.length]);
+
+        const real = pieces.filter(([s, e]) => trimmed.slice(s, e).trim());
+        if (real.length < 2) return;
+
+        // Map character offsets to DOM positions.
+        const walker = document.createTreeWalker(p, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let pos = 0, n;
+        while ((n = walker.nextNode())) {
+            nodes.push({ node: n, start: pos, end: pos + n.nodeValue.length });
+            pos += n.nodeValue.length;
+        }
+        const locate = off => {
+            for (const x of nodes) {
+                if (off <= x.end) return { node: x.node, offset: off - x.start };
+            }
+            const l = nodes[nodes.length - 1];
+            return { node: l.node, offset: l.node.nodeValue.length };
+        };
+
+        const frags = real.map(([s, e]) => {
+            const r = document.createRange();
+            const a = locate(s), b = locate(e);
+            r.setStart(a.node, a.offset);
+            r.setEnd(b.node, b.offset);
+            const span = document.createElement("span");
+            span.appendChild(r.cloneContents());
+            return span;
+        });
+
+        p.textContent = "";
+        p.style.display = "flex";
+        p.style.justifyContent = "space-between";
+        p.style.gap = "10px";
+        frags.forEach(f => p.appendChild(f));
+    });
+}
+
+async function docxToPdf(file) {
+    if (typeof mammoth === "undefined" || typeof html2pdf === "undefined") {
+        throw new Error("Word-to-PDF libraries did not load. Check your internet connection and try again.");
+    }
+
+    const buffer = await file.arrayBuffer();
+
+    const result = await mammoth.convertToHtml(
+        { arrayBuffer: buffer },
+        {
+            styleMap: [
+                "p[style-name='Title'] => h1:fresh",
+                "p[style-name='Subtitle'] => h2:fresh"
+            ],
+            convertImage: mammoth.images.imgElement(async image => ({
+                src: await image.read("base64").then(
+                    value => `data:${image.contentType};base64,${value}`
+                )
+            }))
+        }
+    );
+
+    const grids = await readDocxTableGrids(buffer);
+
+    // 198mm = A4 width minus 6mm margins on each side.
+    // NOTE: do NOT use position:fixed/absolute here. html2pdf clones this node
+    // into its own overlay, and a fixed element collapses to height 0 -> blank PDF.
+    const page = document.createElement("div");
+    page.style.cssText = "width:748px;padding:0;background:#fff;color:#111;text-align:left;font-family:Arial,sans-serif;font-size:11.5px;line-height:1.28;";
+    page.innerHTML = `
+      <style>
+        * { box-sizing: border-box; }
+        h1,h2,h3,h4,h5,h6 { page-break-after: avoid; margin: 0.7em 0 0.35em; }
+        h1 { font-size: 22px; } h2 { font-size: 17px; } h3 { font-size: 14px; }
+        p { margin: 0 0 0.3em; }
+        ul,ol { padding-left: 1.4em; margin: 0.1em 0; text-align: left; }
+        table { width: 100%; border-collapse: collapse; margin: 0.4em 0; }
+        td,th { border: 1px solid #999; padding: 2px 5px; vertical-align: top; overflow-wrap: break-word; word-break: normal; }
+        img { max-width: 100%; height: auto; }
+        tr, img { page-break-inside: avoid; break-inside: avoid; }
+        blockquote { margin-left: 1.5em; }
+      </style>
+      <article>${result.value}</article>`;
+
+    applyTableGrids(page, grids);
+    spreadSpaceGaps(page);
+
+    const blob = await html2pdf().set({
+        margin: [6, 6, 6, 6],
+        filename: outputName(file.name, "pdf"),
+        image: { type: "jpeg", quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", scrollX: 0, scrollY: 0 },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait", compress: true },
+        pagebreak: { mode: ["css", "legacy"], avoid: ["tr", "img", "h1", "h2", "h3"] }
+    }).from(page).outputPdf("blob");
+
+    if (!blob || (blob.size < 5 * 1024 && result.value.length > 500)) {
+        throw new Error("The Word file could not be rendered (blank result). Try another file.");
+    }
+    return makeFile(blob, outputName(file.name, "pdf"), "application/pdf");
+}
+
+async function convertFile(file, format) {
+    if (format === "original") return file;
+
+    const check = checkConversion(file, format);
+    if (!check.ok) throw new Error(check.error);
+
+    const kind = kindOf(file);
+
+    // Accurate path first; if the server is down, fall back to in-browser conversion.
+    serverFallback = false;
+    if (usesServer(kind, format)) {
+        try {
+            return await convertOnServer(file, format);
+        } catch (e) {
+            console.warn("Server conversion failed:", e);
+            if (kind === "office") {
+                throw new Error("The converter server did not respond (" + e.message + "). Please try again in a minute.");
+            }
+            serverFallback = true;   // docx->pdf / pdf->docx still have a basic in-browser version
+        }
+    }
+
+    if (format === "png" || format === "jpg") {
+        const mime = format === "png" ? "image/png" : "image/jpeg";
+        const blob = kind === "pdf"
+            ? await pdfToImage(file, mime)
+            : await imageToBlob(file, mime);
+
+        return makeFile(blob, outputName(file.name, format), mime);
+    }
+
+    if (format === "pdf" && kind === "image") {
+        return await imageToPdf(file);
+    }
+
+    if (format === "pdf" && extension(file.name) === "docx") {
+        return await docxToPdf(file);
+    }
+
+    const text = await extractText(file);
+
+    if (!text.trim()) {
+        throw new Error(
+            "No readable text was found in this file (it may be a scanned or image-only document)."
+        );
+    }
+
+    if (format === "txt") {
+        return makeFile(
+            new Blob([text], { type: "text/plain;charset=utf-8" }),
+            outputName(file.name, "txt"),
+            "text/plain"
+        );
+    }
+
+    if (format === "pdf") {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        const lines = pdf.splitTextToSize(text, 180);
+        let y = 15;
+
+        for (const line of lines) {
+            if (y > 280) {
+                pdf.addPage();
+                y = 15;
+            }
+
+            pdf.text(line, 15, y);
+            y += 7;
+        }
+
+        return makeFile(
+            pdf.output("blob"),
+            outputName(file.name, "pdf"),
+            "application/pdf"
+        );
+    }
+
+    if (format === "docx") {
+        const { Document, Packer, Paragraph } = window.docx;
+
+        const paragraphs = text.split(/\r?\n/).map(line =>
+            new Paragraph({ text: line })
+        );
+
+        const doc = new Document({
+            sections: [{
+                children: paragraphs.length
+                    ? paragraphs
+                    : [new Paragraph({ text: "" })]
+            }]
+        });
+
+        return makeFile(
+            await Packer.toBlob(doc),
+            outputName(file.name, "docx"),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        );
+    }
+
+    if (format === "pptx") {
+        const Pptx = window.PptxGenJS ||
+                     window.pptxgenjs ||
+                     window.pptxgen;
+
+        if (!Pptx) {
+            throw new Error(
+                "PowerPoint library failed to load. Check your internet connection."
+            );
+        }
+
+        const pptx = new Pptx();
+        pptx.layout = "LAYOUT_WIDE";
+
+        const paragraphs = text.split(/\r?\n/).filter(line => line.trim());
+        const groups = [];
+
+        for (let i = 0; i < paragraphs.length; i += 8) {
+            groups.push(paragraphs.slice(i, i + 8));
+        }
+
+        if (!groups.length) groups.push([""]);
+
+        groups.forEach((group, index) => {
+            const slide = pptx.addSlide();
+
+            slide.addText(index === 0 ? file.name : "Continued", {
+                x: 0.6, y: 0.35, w: 12, h: 0.6,
+                fontSize: 24, bold: true, color: "1565C0"
+            });
+
+            slide.addText(group.join("\n"), {
+                x: 0.7, y: 1.2, w: 11.8, h: 5.4,
+                fontSize: 18, valign: "top", color: "16213E",
+                margin: 0.1, fit: "shrink"
+            });
+        });
+
+        const blob = await pptx.write({ outputType: "blob" });
+
+        return makeFile(
+            blob,
+            outputName(file.name, "pptx"),
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+        );
+    }
+
+    throw new Error("Unsupported output format.");
+}
+
+checkRelay().then(ok => {
+    relayWorks = ok;
+    if (!ok) {
+        console.warn("No TURN relay is reachable. Add your own servers to MY_ICE_SERVERS.");
+        if (peer) relayNote.style.display = "block";
+    }
+});
+
+function randomCode() {
+    return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+function formatTime(ms) {
+    const t = Math.max(0, Math.ceil(ms / 1000));
+    return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
+}
+
+// ---------- 4-minute code lifetime ----------
+function startCountdown() {
+    clearInterval(expiryTimer);
+    expired = false;
+    expiresAt = Date.now() + CODE_LIFETIME_MS;
+    tick();
+    expiryTimer = setInterval(tick, 500);
+}
+
+function tick() {
+    const left = expiresAt - Date.now();
+
+    if (left <= 0) {
+        expireCode();
+        return;
+    }
+
+    timerText.className = left < 30000 ? "err" : "";
+    timerText.textContent = "Code expires in " + formatTime(left);
+}
+
+function expireCode() {
+    if (expired) return;
+    expired = true;
+    clearInterval(expiryTimer);
+
+    // Stop accepting new receivers. Transfers that already started keep going.
+    if (peer && !peer.destroyed) {
+        try { peer.disconnect(); } catch (e) {}
+    }
+
+    codeText.classList.add("expired");
+    stopBtn.style.display = "none";
+    timerText.className = "err";
+    timerText.textContent = activeTransfers
+        ? "Code expired. No new receivers can join; current transfers will finish."
+        : "Code expired. Generate a new code to share again.";
+
+    if (!activeTransfers) closeSession();
+}
+
+function closeSession() {
+    if (peer) { try { peer.destroy(); } catch (e) {} peer = null; }
+    preparedFile = null;
+    sendBtn.disabled = busy || !pendingFile;
+}
+
+stopBtn.addEventListener("click", expireCode);
+
+// ---------- one row per receiver ----------
+function addReceiverRow(number) {
+    const row = document.createElement("div");
+    row.className = "receiver-row";
+
+    const label = document.createElement("div");
+    const bar = document.createElement("progress");
+    bar.max = 100;
+    bar.value = 0;
+
+    row.append(label, bar);
+    receiverList.appendChild(row);
+
+    const api = {
+        status(text, cls = "") {
+            label.className = cls;
+            label.textContent = "Receiver " + number + ": " + text;
+        },
+        progress(value) { bar.value = value; }
+    };
+
+    api.status("connecting...");
+    return api;
+}
+
+function updateSummary() {
+    statusText.className = "";
+    statusText.textContent = receiverCount
+        ? receiverCount + " receiver" + (receiverCount === 1 ? "" : "s") + " connected"
+        : "Waiting for receivers to connect...";
+}
+
+function startPeer() {
+    const p = new Peer(randomCode(), PEER_OPTIONS);
+    const file = preparedFile;
+    if (relayWorks === false) relayNote.style.display = "block";   // each receiver gets exactly this file
+
+    p.on("open", id => {
+        peer = p;
+        sendBtn.disabled = true;
+        codeText.textContent = id;
+        codeText.classList.remove("expired");
+        codeBox.style.display = "block";
+        stopBtn.style.display = "inline";
+        receiverList.textContent = "";
+        receiverCount = 0;
+        activeTransfers = 0;
+        setMessage("");
+        updateSummary();
+        startCountdown();
+    });
+
+    p.on("disconnected", () => {
+        // Lost the signalling server (e.g. brief network drop): reconnect
+        // while the code is still valid.
+        if (!expired && !p.destroyed) {
+            try { p.reconnect(); } catch (e) {}
+        }
+    });
+
+    p.on("error", err => {
+        if (err.type === "unavailable-id") {
+            p.destroy();
+            startPeer();
+            return;
+        }
+
+        setMessage("Connection error: " + err.type, "err");
+        sendBtn.disabled = false;
+    });
+
+    p.on("connection", conn => {
+        const refuse = message => {
+            conn.on("open", () => {
+                try { conn.send({ kind: "error", message }); } catch (e) {}
+                setTimeout(() => conn.close(), 500);
+            });
+        };
+
+        if (expired) return refuse("This code has expired.");
+        if (receiverCount >= MAX_RECEIVERS) {
+            return refuse("This code is full (" + MAX_RECEIVERS + " receivers max).");
+        }
+
+        receiverCount++;
+        const row = addReceiverRow(receiverCount);
+        updateSummary();
+
+        // If the direct link never opens, say so instead of hanging forever.
+        const connectTimer = setTimeout(() => {
+            if (!conn.open) {
+                row.status(relayWorks === false
+                    ? "could not connect (the relay server is down, so this network blocks the link)"
+                    : "could not connect (this network may block direct connections)", "err");
+                try { conn.close(); } catch (e) {}
+            }
+        }, CONNECT_TIMEOUT_MS);
+
+        conn.on("open", () => {
+            clearTimeout(connectTimer);
+            activeTransfers++;
+            sendFile(conn, row, file).finally(() => {
+                activeTransfers--;
+                if (expired && !activeTransfers) {
+                    timerText.textContent =
+                        "Code expired. Generate a new code to share again.";
+                    closeSession();
+                }
+            });
+        });
+
+        conn.on("error", () => row.status("connection lost", "err"));
+    });
+}
+
+async function waitForFlush(conn) {
+    const dc = conn.dataChannel;
+    while (dc && conn.open && dc.bufferedAmount > 0) {
+        await new Promise(r => setTimeout(r, 50));
+    }
+}
+
+async function sendFile(conn, row, file) {
+    try {
+        row.status("sending...");
+
+        conn.send({
+            kind: "header",
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size
+        });
+
+        const dc = conn.dataChannel;
+        let offset = 0;
+
+        while (offset < file.size) {
+            if (!conn.open) throw new Error("receiver disconnected.");
+
+            if (dc && dc.bufferedAmount > 4 * 1024 * 1024) {
+                await new Promise((resolve, reject) => {
+                    const check = () => {
+                        if (!conn.open) {
+                            reject(new Error("receiver disconnected."));
+                        } else if (!dc || dc.bufferedAmount < 1024 * 1024) {
+                            resolve();
+                        } else {
+                            setTimeout(check, 50);
+                        }
+                    };
+                    check();
+                });
+            }
+
+            const buffer = await file
+                .slice(offset, offset + CHUNK_SIZE)
+                .arrayBuffer();
+
+            conn.send(buffer);
+            offset += buffer.byteLength;
+            row.progress(Math.round(offset / file.size * 100));
+        }
+
+        conn.send({
+            kind: "done",
+            name: file.name,
+            type: file.type || "application/octet-stream",
+            size: file.size
+        });
+        await waitForFlush(conn);   // make sure everything left before we ever close
+
+        row.progress(100);
+        row.status("sent successfully", "ok");
+
+    } catch (error) {
+        row.status("failed: " + error.message, "err");
+    }
+}
+
+sendBtn.addEventListener("click", async () => {
+    if (!pendingFile || busy) return;
+
+    const format = outputFormat.value;
+    const check = checkConversion(pendingFile, format);
+
+    if (!check.ok) {
+        setMessage(check.error, "err");
+        return;
+    }
+
+    busy = true;
+    sendBtn.disabled = true;
+    resetShare();
+    setMessage(format === "original" ? "Preparing your file..."
+        : usesServer(kindOf(pendingFile), format) ? "Converting your file... (the first conversion can take up to a minute while the server wakes up)"
+        : "Converting your file...");
+
+    try {
+        preparedFile = await convertFile(pendingFile, format);
+
+        if (preparedFile.size === 0) {
+            throw new Error("The converted file is empty.");
+        }
+
+        conversionInfo.className = "";
+        conversionInfo.textContent =
+            "Ready to send: " + preparedFile.name +
+            " (" + Math.round(preparedFile.size / 1024) + " KB)" +
+            (serverFallback ? ". Note: the converter server did not respond, so a basic in-browser conversion was used and the layout may differ." : "");
+
+        setMessage("File prepared. Generating sharing code...", "ok");
+        startPeer();
+
+    } catch (error) {
+        preparedFile = null;
+        setMessage("Conversion failed: " + error.message, "err");
+
+    } finally {
+        busy = false;
+        sendBtn.disabled = !!preparedFile;
+    }
+});
+</script>
+</body>
+</html>
