@@ -44,41 +44,8 @@ Because the transfer is peer-to-peer, both people need to have their browser tab
 
 ## Converter server
 
-The converter is only needed for Office-to-PDF and PDF-to-DOCX conversions. The rest of the app works without it.
+The converter is only needed for Office-to-PDF and PDF-to-DOCX conversions. The rest of the app works without it. IN future it might be updated to add more conversion types .
 
-**Endpoints**
-
-- `GET /health`: returns `{"ok": true}`. The frontend calls it when the page loads to wake the server.
-- `POST /convert?to=pdf|docx`: accepts a multipart `file` upload and returns the converted file.
-  - `to=pdf` accepts doc, docx, odt, rtf, txt, ppt, pptx, odp, xls, xlsx, ods, csv.
-  - `to=docx` accepts pdf. Image-only PDFs are OCR'd first.
-- Limits: 25 MB per file. Uploaded and converted files are deleted after the response is sent.
-
-**Environment variables**
-
-| Variable | Default | Purpose |
-|---|---|---|
-| `ALLOWED_ORIGINS` | `*` | Comma-separated list of origins allowed by CORS |
-| `MAX_JOBS` | `1` | Conversions run at the same time (the free Render plan has 512 MB RAM) |
-| `PORT` | `8000` | Port the server listens on |
-
-**Deploying on Render**
-
-1. Push this repo to GitHub.
-2. In Render, create a new Blueprint from the repo. `render.yaml` sets up the Docker service from `converter/Dockerfile`.
-3. Copy the service URL and set it as `CONVERTER_URL` near the top of `send.html`.
-
-Free Render services sleep after inactivity. The first conversion can take up to a minute while the server wakes up.
-
-**Running locally**
-
-```bash
-cd converter
-docker build -t peerdrop-converter .
-docker run -p 8000:8000 peerdrop-converter
-```
-
-Then set `CONVERTER_URL = "http://localhost:8000"` in `send.html`.
 
 ## Hosting the frontend
 
