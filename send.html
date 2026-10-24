@@ -19,7 +19,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-    /* css code start here */
 <style>
 * {
     box-sizing: border-box;
@@ -478,7 +477,19 @@ const relayNote = document.getElementById("relay-note");
 const receiverList = document.getElementById("receiver-list");
 const stopBtn = document.getElementById("stop-btn");
 
-<!--NETWORK SERVER -->
+// ---------- Network setup ----------
+// STUN helps two devices find each other. TURN is a RELAY that carries the file
+// when a direct link is blocked (mobile data, college/office Wi-Fi). Without a
+// working TURN server, transfers between such networks fail.
+//
+// >>> PASTE YOUR OWN TURN SERVERS HERE <<<
+// Create a free TURN app at https://www.metered.ca (Dashboard -> TURN Server)
+// and copy the iceServers list it shows you, e.g.
+// const MY_ICE_SERVERS = [
+//   { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
+//   { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" },
+//   { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "xxxx", credential: "yyyy" }
+// ];
 const MY_ICE_SERVERS = [];
 
 const STUN_SERVERS = [
@@ -885,7 +896,7 @@ async function imageToPdf(file) {
     return makeFile(pdf.output("blob"), outputName(file.name, "pdf"), "application/pdf");
 }
 
-// Word stores real column widths
+// Word stores real column widths, but mammoth drops them, so the browser
 // guesses and wide tables overflow the page. Read them straight from the .docx.
 async function readDocxTableGrids(arrayBuffer) {
     if (typeof JSZip === "undefined") return [];
