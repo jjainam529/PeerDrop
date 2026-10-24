@@ -1,9 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <!-- Primary SEO Tags -->
 <title>Send Files - Peer Dropp</title>
 <meta name="description" content="Send files with Peer Dropp: pick a file, get a 4-digit code and share it with up to 10 people. Fast, direct peer-to-peer transfer.">
@@ -19,6 +19,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
+    /* css code start here */
 <style>
 * {
     box-sizing: border-box;
@@ -428,8 +429,8 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 // URL of the converter service (see /converter). Leave "" to use only the
 // in-browser converters. Example: "https://peerdrop-converter.onrender.com"
-const CONVERTER_URL = "";
-const SERVER_NOTE = "Converted on our server with LibreOffice / pdf2docx for accurate layout. The file is deleted right after conversion.";
+const CONVERTER_URL = "https://peerdrop-converter.onrender.com";
+const SERVER_NOTE = "Uses the server converter (pdf2docx / LibreOffice) to preserve layout as far as possible. Uploaded files are deleted after conversion.";
 function usesServer(kind, format) {
     return !!CONVERTER_URL &&
         ((["docx", "office"].includes(kind) && format === "pdf") || (kind === "pdf" && format === "docx"));
@@ -477,19 +478,7 @@ const relayNote = document.getElementById("relay-note");
 const receiverList = document.getElementById("receiver-list");
 const stopBtn = document.getElementById("stop-btn");
 
-// ---------- Network setup ----------
-// STUN helps two devices find each other. TURN is a RELAY that carries the file
-// when a direct link is blocked (mobile data, college/office Wi-Fi). Without a
-// working TURN server, transfers between such networks fail.
-//
-// >>> PASTE YOUR OWN TURN SERVERS HERE <<<
-// Create a free TURN app at https://www.metered.ca (Dashboard -> TURN Server)
-// and copy the iceServers list it shows you, e.g.
-// const MY_ICE_SERVERS = [
-//   { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
-//   { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" },
-//   { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "xxxx", credential: "yyyy" }
-// ];
+<!--NETWORK SERVER -->
 const MY_ICE_SERVERS = [];
 
 const STUN_SERVERS = [
@@ -896,7 +885,7 @@ async function imageToPdf(file) {
     return makeFile(pdf.output("blob"), outputName(file.name, "pdf"), "application/pdf");
 }
 
-// Word stores real column widths, but mammoth drops them, so the browser
+// Word stores real column widths
 // guesses and wide tables overflow the page. Read them straight from the .docx.
 async function readDocxTableGrids(arrayBuffer) {
     if (typeof JSZip === "undefined") return [];
@@ -1072,11 +1061,18 @@ async function convertFile(file, format) {
         try {
             return await convertOnServer(file, format);
         } catch (e) {
-            console.warn("Server conversion failed:", e);
+            console.error("Server conversion failed:", e);
+            // PDF -> DOCX must not silently fall back to text-only conversion:
+            // that creates a misleading Word file and loses the original layout.
+            if (kind === "pdf" && format === "docx") {
+                throw new Error("High-quality PDF-to-Word conversion failed on the converter server: " +
+                    (e && e.message ? e.message : "unknown server error") +
+                    ". Please retry when the converter is awake. No low-quality fallback file was created.");
+            }
             if (kind === "office") {
                 throw new Error("The converter server did not respond (" + e.message + "). Please try again in a minute.");
             }
-            serverFallback = true;   // docx->pdf / pdf->docx still have a basic in-browser version
+            serverFallback = true;
         }
     }
 
