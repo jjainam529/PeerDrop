@@ -40,7 +40,6 @@ Dockerfile Container image for the converter
 Because the transfer is peer-to-peer, both people need to have their browser tab open until the transfer finishes.
 
 
-```
 
 ## Converter server
 
