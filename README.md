@@ -39,18 +39,7 @@ Dockerfile Container image for the converter
 
 Because the transfer is peer-to-peer, both people need to have their browser tab open until the transfer finishes.
 
-## Network setup (TURN)
 
-Direct connections fail on some networks, such as mobile data and some office or college Wi-Fi. In those cases a TURN relay is needed.
-
-- The default TURN servers come from openrelay.metered.ca. They are shared and often unreliable.
-- For reliable transfers, create a free TURN app at [metered.ca](https://www.metered.ca), copy the `iceServers` list, and paste it into `MY_ICE_SERVERS` in `send.html`.
-
-```js
-const MY_ICE_SERVERS = [
-  { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
-  { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" }
-];
 ```
 
 ## Converter server
