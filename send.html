@@ -426,8 +426,7 @@ select,
 pdfjsLib.GlobalWorkerOptions.workerSrc =
     "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-// URL of the converter service (see /converter). Leave "" to use only the
-// in-browser converters. Example: "https://peerdrop-converter.onrender.com"
+
 const CONVERTER_URL = "https://peerdrop-converter.onrender.com";
 const SERVER_NOTE = "Uses the server converter (pdf2docx / LibreOffice) to preserve layout as far as possible. Uploaded files are deleted after conversion.";
 function usesServer(kind, format) {
@@ -435,9 +434,9 @@ function usesServer(kind, format) {
         ((["docx", "office"].includes(kind) && format === "pdf") || (kind === "pdf" && format === "docx"));
 }
 
-let serverFallback = false;   // true if the last conversion had to use the basic in-browser converter
+let serverFallback = false;   /
 
-// Free hosts (e.g. Render) put the converter to sleep when idle; wake it as soon as the page opens.
+// Free host
 if (CONVERTER_URL) {
     fetch(CONVERTER_URL + "/health").catch(() => {});
 }
@@ -477,19 +476,7 @@ const relayNote = document.getElementById("relay-note");
 const receiverList = document.getElementById("receiver-list");
 const stopBtn = document.getElementById("stop-btn");
 
-// ---------- Network setup ----------
-// STUN helps two devices find each other. TURN is a RELAY that carries the file
-// when a direct link is blocked (mobile data, college/office Wi-Fi). Without a
-// working TURN server, transfers between such networks fail.
-//
-// >>> PASTE YOUR OWN TURN SERVERS HERE <<<
-// Create a free TURN app at https://www.metered.ca (Dashboard -> TURN Server)
-// and copy the iceServers list it shows you, e.g.
-// const MY_ICE_SERVERS = [
-//   { urls: "turn:standard.relay.metered.ca:80", username: "xxxx", credential: "yyyy" },
-//   { urls: "turn:standard.relay.metered.ca:443", username: "xxxx", credential: "yyyy" },
-//   { urls: "turns:standard.relay.metered.ca:443?transport=tcp", username: "xxxx", credential: "yyyy" }
-// ];
+
 const MY_ICE_SERVERS = [];
 
 const STUN_SERVERS = [
@@ -498,7 +485,7 @@ const STUN_SERVERS = [
     { urls: "stun:global.stun.twilio.com:3478" }
 ];
 
-// Free public fallback. Shared by many people and often unreliable or disabled.
+// Free public fallback. 
 const FALLBACK_TURN = [{
     urls: [
         "turn:openrelay.metered.ca:80",
@@ -515,7 +502,7 @@ const ICE_SERVERS = STUN_SERVERS.concat(
 const PEER_OPTIONS = { config: { iceServers: ICE_SERVERS, iceCandidatePoolSize: 4 } };
 const CONNECT_TIMEOUT_MS = 20000;
 
-// Does at least one TURN relay actually answer? (true / false)
+
 let relayWorks = null;
 function checkRelay() {
     return new Promise(resolve => {
@@ -624,7 +611,6 @@ fileInput.addEventListener("change", () => {
     }
 });
 
-// Drag-and-drop support
 uploadBox.addEventListener("dragover", event => {
     event.preventDefault();
     uploadBox.classList.add("drag-over");
@@ -673,8 +659,7 @@ function sameFormat(file, format) {
     return ext === format || (format === "jpg" && ext === "jpeg");
 }
 
-// Returns { ok, error?, note? }. Everything that can be known up front is
-// checked here, so the user sees "not possible" before anything is converted.
+
 function checkConversion(file, format) {
     if (!file) return { ok: false };
     if (format === "original") {
@@ -787,8 +772,7 @@ async function extractText(file) {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const content = await page.getTextContent();
-            // Rebuild real lines (by y position) and add spaces only at real gaps,
-            // so words are not split ("Ips hita") and lines are not merged.
+            
             const lines = []; let line = "", lastY = null, lastEnd = null;
             for (const it of content.items) {
                 const x = it.transform[4], y = it.transform[5];
@@ -896,8 +880,7 @@ async function imageToPdf(file) {
     return makeFile(pdf.output("blob"), outputName(file.name, "pdf"), "application/pdf");
 }
 
-// Word stores real column widths, but mammoth drops them, so the browser
-// guesses and wide tables overflow the page. Read them straight from the .docx.
+
 async function readDocxTableGrids(arrayBuffer) {
     if (typeof JSZip === "undefined") return [];
     try {
@@ -1020,9 +1003,7 @@ async function docxToPdf(file) {
 
     const grids = await readDocxTableGrids(buffer);
 
-    // 198mm = A4 width minus 6mm margins on each side.
-    // NOTE: do NOT use position:fixed/absolute here. html2pdf clones this node
-    // into its own overlay, and a fixed element collapses to height 0 -> blank PDF.
+
     const page = document.createElement("div");
     page.style.cssText = "width:748px;padding:0;background:#fff;color:#111;text-align:left;font-family:Arial,sans-serif;font-size:11.5px;line-height:1.28;";
     page.innerHTML = `
@@ -1232,7 +1213,7 @@ function formatTime(ms) {
     return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0");
 }
 
-// ---------- 4-minute code lifetime ----------
+
 function startCountdown() {
     clearInterval(expiryTimer);
     expired = false;
@@ -1258,7 +1239,6 @@ function expireCode() {
     expired = true;
     clearInterval(expiryTimer);
 
-    // Stop accepting new receivers. Transfers that already started keep going.
     if (peer && !peer.destroyed) {
         try { peer.disconnect(); } catch (e) {}
     }
@@ -1316,7 +1296,7 @@ function updateSummary() {
 function startPeer() {
     const p = new Peer(randomCode(), PEER_OPTIONS);
     const file = preparedFile;
-    if (relayWorks === false) relayNote.style.display = "block";   // each receiver gets exactly this file
+    if (relayWorks === false) relayNote.style.display = "block";   
 
     p.on("open", id => {
         peer = p;
@@ -1334,8 +1314,7 @@ function startPeer() {
     });
 
     p.on("disconnected", () => {
-        // Lost the signalling server (e.g. brief network drop): reconnect
-        // while the code is still valid.
+ 
         if (!expired && !p.destroyed) {
             try { p.reconnect(); } catch (e) {}
         }
@@ -1369,7 +1348,6 @@ function startPeer() {
         const row = addReceiverRow(receiverCount);
         updateSummary();
 
-        // If the direct link never opens, say so instead of hanging forever.
         const connectTimer = setTimeout(() => {
             if (!conn.open) {
                 row.status(relayWorks === false
@@ -1450,7 +1428,7 @@ async function sendFile(conn, row, file) {
             type: file.type || "application/octet-stream",
             size: file.size
         });
-        await waitForFlush(conn);   // make sure everything left before we ever close
+        await waitForFlush(conn); 
 
         row.progress(100);
         row.status("sent successfully", "ok");
